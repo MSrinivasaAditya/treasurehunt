@@ -1,0 +1,748 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Mind Benders</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;700&family=IBM+Plex+Mono:wght@400;600&family=Crimson+Pro:wght@400;600&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#0c0b09;--surf:#131210;--bdr:rgba(255,255,255,0.07);
+  --gold:#d4a843;--text:#e8e0d0;--tdim:rgba(232,224,208,0.45);
+  --tmut:rgba(232,224,208,0.22);--grn:#4daf6e;--red:#d4635a;
+  --gbg:rgba(77,175,110,0.08);--rbg:rgba(212,99,90,0.08);--hdr:52px;
+}
+html,body{height:100%}
+body{background:var(--bg);color:var(--text);min-height:100dvh;
+  display:flex;flex-direction:column;align-items:center;font-family:'Crimson Pro',serif;
+  padding:0 14px 40px;padding-top:calc(var(--hdr) + 16px);overflow-x:hidden}
+body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:0;
+  background:radial-gradient(ellipse 80% 50% at 20% 10%,rgba(212,168,67,.05),transparent 70%),
+             radial-gradient(ellipse 60% 70% at 80% 90%,rgba(180,130,50,.03),transparent 70%)}
+body::after{content:'';position:fixed;inset:0;pointer-events:none;z-index:0;
+  background-image:radial-gradient(circle,rgba(255,255,255,.05) 1px,transparent 1px);
+  background-size:28px 28px}
+
+/* ── Header ── */
+.hdr{position:fixed;top:0;left:0;right:0;z-index:20;height:var(--hdr);
+  display:flex;align-items:center;justify-content:space-between;padding:0 18px;
+  border-bottom:1px solid var(--bdr);background:rgba(12,11,9,.93);
+  backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px)}
+.logo{font-family:'Playfair Display',serif;font-size:clamp(.85rem,3vw,1rem);
+  font-weight:700;letter-spacing:.1em;color:var(--gold);text-transform:uppercase}
+
+/* Global timer in header */
+.global-timer{display:flex;align-items:center;gap:8px}
+.gtimer-label{font-family:'IBM Plex Mono',monospace;font-size:clamp(.55rem,2vw,.65rem);
+  color:var(--tdim);letter-spacing:.1em;text-transform:uppercase}
+.gtimer-val{font-family:'IBM Plex Mono',monospace;font-size:clamp(.85rem,3vw,1rem);
+  font-weight:600;color:var(--gold);letter-spacing:.05em;min-width:42px;text-align:right;
+  transition:color .3s}
+.gtimer-val.warn{color:var(--red);animation:pulse .8s ease infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.5}}
+
+.round-info{font-family:'IBM Plex Mono',monospace;font-size:clamp(.58rem,2.5vw,.68rem);
+  color:var(--tdim);letter-spacing:.1em}
+.round-info span{color:var(--gold);font-weight:600}
+
+/* Progress bar */
+.prog{position:fixed;top:var(--hdr);left:0;right:0;height:3px;
+  background:rgba(255,255,255,.04);z-index:20}
+.prog-fill{height:100%;background:linear-gradient(90deg,#d4a843,#f0c96a);
+  transition:width .6s cubic-bezier(.4,0,.2,1);box-shadow:0 0 14px rgba(212,168,67,.6)}
+/* Timer drain bar — red, underneath */
+.prog-timer{position:fixed;top:calc(var(--hdr) + 3px);left:0;right:0;height:2px;
+  background:rgba(212,99,90,.15);z-index:20}
+.prog-timer-fill{height:100%;background:rgba(212,99,90,.7);
+  transition:width 1s linear;box-shadow:0 0 8px rgba(212,99,90,.5)}
+
+/* Stage / Card */
+.stage{position:relative;z-index:1;width:100%;max-width:560px;margin-top:8px;
+  animation:stageIn .55s cubic-bezier(.16,1,.3,1) both}
+@keyframes stageIn{from{opacity:0;transform:translateY(18px) scale(.98)}to{opacity:1;transform:none}}
+@keyframes feedIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+
+.card{background:var(--surf);border:1px solid var(--bdr);border-radius:4px;overflow:hidden;
+  box-shadow:0 1px 0 rgba(255,255,255,.04) inset,0 24px 60px rgba(0,0,0,.65)}
+.card-accent{height:3px;background:linear-gradient(90deg,var(--gold),transparent);opacity:.65}
+.card-body{padding:clamp(18px,5vw,30px) clamp(14px,5vw,30px) clamp(16px,4vw,24px)}
+.card-foot{padding:12px clamp(14px,5vw,30px);border-top:1px solid var(--bdr);
+  display:flex;align-items:center;justify-content:space-between;gap:10px;
+  background:rgba(255,255,255,.01)}
+
+/* Stars */
+.stars{display:flex;justify-content:center;gap:10px;margin-bottom:14px}
+.star{font-size:1rem;opacity:.18;transition:opacity .4s,transform .4s;transform:scale(.8)}
+.star.lit{opacity:1;transform:scale(1.1);filter:drop-shadow(0 0 6px rgba(212,168,67,.8))}
+
+/* Tag row — no per-puzzle timer ring anymore */
+.tag-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;gap:10px}
+.cat-tag{font-family:'IBM Plex Mono',monospace;font-size:clamp(.54rem,2vw,.62rem);
+  font-weight:600;letter-spacing:.2em;text-transform:uppercase;
+  padding:4px 10px;border-radius:2px;border:1px solid;flex-shrink:0}
+.ct-riddle{color:#c2a0e8;border-color:rgba(194,160,232,.3);background:rgba(194,160,232,.07)}
+.ct-maze{color:#f0b86a;border-color:rgba(240,184,106,.3);background:rgba(240,184,106,.07)}
+.ct-word{color:#6ae8a0;border-color:rgba(106,232,160,.3);background:rgba(106,232,160,.07)}
+
+.puzzle-num{font-family:'IBM Plex Mono',monospace;font-size:clamp(.55rem,2vw,.65rem);
+  color:var(--tmut);letter-spacing:.12em}
+
+.plabel{font-family:'IBM Plex Mono',monospace;font-size:clamp(.54rem,2vw,.62rem);
+  color:var(--tmut);letter-spacing:.15em;margin-bottom:6px}
+.question{font-family:'Playfair Display',serif;font-size:clamp(1rem,4vw,1.18rem);
+  font-weight:500;line-height:1.65;color:var(--text);margin-bottom:18px}
+
+/* Choices */
+.choices{display:flex;flex-direction:column;gap:7px}
+.choice{display:grid;grid-template-columns:34px 1fr;align-items:stretch;
+  border:1px solid var(--bdr);cursor:pointer;background:transparent;text-align:left;
+  color:var(--text);font-family:'Crimson Pro',serif;font-size:clamp(.93rem,3.5vw,1.05rem);
+  transition:border-color .15s,background .15s;border-radius:3px;overflow:hidden;
+  min-height:50px;-webkit-tap-highlight-color:transparent}
+.choice:active:not(:disabled){transform:scale(.985)}
+@media(hover:hover){.choice:hover:not(:disabled){border-color:rgba(212,168,67,.4);background:rgba(212,168,67,.05)}}
+.choice:disabled{cursor:default}
+.cletter{display:flex;align-items:center;justify-content:center;font-family:'IBM Plex Mono',monospace;
+  font-size:.6rem;font-weight:600;color:var(--tmut);background:rgba(255,255,255,.02);
+  border-right:1px solid var(--bdr);flex-shrink:0}
+.ctext{padding:12px 13px;line-height:1.4;display:flex;align-items:center}
+.choice.correct{border-color:rgba(77,175,110,.5);background:var(--gbg)}
+.choice.correct .cletter{background:rgba(77,175,110,.15);color:var(--grn)}
+.choice.wrong{border-color:rgba(212,99,90,.4);background:var(--rbg)}
+.choice.wrong .cletter{background:rgba(212,99,90,.12);color:var(--red)}
+
+/* Maze */
+.maze-wrap{display:flex;flex-direction:column;align-items:center;gap:14px}
+.dpad{display:grid;grid-template-areas:". u ." "l . r" ". d .";
+  grid-template-columns:52px 52px 52px;grid-template-rows:52px 52px 52px;gap:4px}
+.db{display:flex;align-items:center;justify-content:center;background:rgba(212,168,67,.08);
+  border:1px solid rgba(212,168,67,.22);color:var(--gold);font-size:1.1rem;border-radius:6px;
+  cursor:pointer;-webkit-tap-highlight-color:transparent;touch-action:manipulation;transition:background .1s}
+.db:active{background:rgba(212,168,67,.28)}
+.maze-tip{font-family:'IBM Plex Mono',monospace;font-size:.6rem;color:var(--tmut);
+  letter-spacing:.1em;text-align:center}
+.maze-moves{font-family:'IBM Plex Mono',monospace;font-size:.68rem;color:var(--tdim);
+  letter-spacing:.1em;text-align:center}
+
+/* Word Search */
+.ws-wrap{display:flex;flex-direction:column;gap:12px;align-items:center}
+.ws-grid{display:grid;gap:2px;user-select:none;touch-action:none;-webkit-user-select:none}
+.wc{display:flex;align-items:center;justify-content:center;font-family:'IBM Plex Mono',monospace;
+  font-weight:600;border:1px solid rgba(255,255,255,.05);border-radius:2px;cursor:pointer;
+  background:rgba(255,255,255,.02);color:var(--tdim);transition:background .08s;aspect-ratio:1;
+  -webkit-tap-highlight-color:transparent}
+.wc.sel{background:rgba(212,168,67,.28);color:var(--gold);border-color:rgba(212,168,67,.45)}
+.wc.fnd{background:rgba(77,175,110,.15);color:var(--grn);border-color:rgba(77,175,110,.3)}
+.ws-words{display:flex;flex-wrap:wrap;gap:7px;justify-content:center;padding:0 4px}
+.wsw{font-family:'IBM Plex Mono',monospace;font-size:clamp(.6rem,2.5vw,.72rem);font-weight:600;
+  letter-spacing:.1em;padding:4px 10px;border:1px solid rgba(255,255,255,.08);border-radius:2px;
+  color:var(--tdim);background:rgba(255,255,255,.03);transition:all .3s}
+.wsw.fnd{color:var(--grn);border-color:rgba(77,175,110,.3);background:rgba(77,175,110,.08);
+  text-decoration:line-through}
+
+/* Feedback */
+.feedback{margin-top:18px;border-top:1px solid var(--bdr);padding-top:16px;
+  display:none;animation:feedIn .4s ease both}
+.feedback.show{display:block}
+.fstatus{font-family:'IBM Plex Mono',monospace;font-size:clamp(.58rem,2.5vw,.68rem);
+  font-weight:600;letter-spacing:.18em;text-transform:uppercase;margin-bottom:8px}
+.fstatus.ok{color:var(--grn)}.fstatus.err{color:var(--red)}
+.ftext{font-size:clamp(.9rem,3.5vw,1rem);line-height:1.7;color:rgba(232,224,208,.6)}
+.ftext strong{color:var(--text);font-weight:600}
+.wrong-notice{margin-top:12px;padding:10px 14px;background:rgba(212,99,90,.08);
+  border:1px solid rgba(212,99,90,.25);border-radius:3px;
+  font-family:'IBM Plex Mono',monospace;font-size:clamp(.6rem,2.5vw,.68rem);
+  color:var(--red);letter-spacing:.08em;display:none}
+.wrong-notice.show{display:block}
+.next-row{margin-top:16px}
+.btn-next{font-family:'IBM Plex Mono',monospace;font-size:clamp(.6rem,2.5vw,.68rem);
+  font-weight:600;letter-spacing:.16em;text-transform:uppercase;color:var(--gold);
+  background:rgba(212,168,67,.1);border:1px solid rgba(212,168,67,.25);padding:11px 20px;
+  cursor:pointer;border-radius:2px;-webkit-tap-highlight-color:transparent;min-height:44px;transition:all .15s}
+.btn-next:active{background:rgba(212,168,67,.22)}
+
+/* Hint */
+.hintbox{margin:0 clamp(14px,5vw,30px);padding:11px 15px;background:rgba(212,168,67,.05);
+  border-left:2px solid rgba(212,168,67,.35);font-size:clamp(.87rem,3.5vw,.95rem);font-style:italic;
+  color:rgba(232,224,208,.5);display:none;animation:feedIn .3s ease}
+.hintbox.show{display:block}
+.hbtn{font-family:'IBM Plex Mono',monospace;font-size:clamp(.56rem,2vw,.62rem);color:var(--tdim);
+  background:rgba(255,255,255,.04);border:1px solid var(--bdr);border-radius:2px;cursor:pointer;
+  letter-spacing:.1em;padding:7px 12px;transition:all .15s;text-transform:uppercase;
+  min-height:36px;-webkit-tap-highlight-color:transparent}
+.hbtn.shown{opacity:.4;cursor:default}
+.diff-row{display:flex;align-items:center;gap:4px}
+.dot{width:5px;height:5px;border-radius:50%;background:var(--tmut)}
+.dot.on{background:var(--gold)}
+.dlabel{font-family:'IBM Plex Mono',monospace;font-size:.57rem;color:var(--tmut);
+  letter-spacing:.1em;margin-left:5px}
+
+/* ── End Screens ── */
+.endscreen{position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;
+  justify-content:center;opacity:0;pointer-events:none;transition:opacity 1.2s ease;z-index:100;gap:20px}
+.endscreen.show{opacity:1;pointer-events:all}
+
+/* Win — white */
+#screenWin{background:#ffffff}
+#screenWin .end-title{font-family:'Playfair Display',serif;font-size:clamp(1.8rem,6vw,2.8rem);
+  color:#1a1612;font-weight:700;letter-spacing:.05em}
+#screenWin .end-sub{font-family:'IBM Plex Mono',monospace;font-size:clamp(.65rem,2.5vw,.8rem);
+  color:#b5a48a;letter-spacing:.2em;text-transform:uppercase}
+#screenWin .end-stars{font-size:2rem;letter-spacing:8px}
+
+/* PDF Button on Win */
+.pdf-btn{display:inline-flex;align-items:center;gap:10px;
+  font-family:'IBM Plex Mono',monospace;font-size:clamp(.7rem,2.5vw,.85rem);
+  font-weight:600;letter-spacing:.15em;text-transform:uppercase;text-decoration:none;
+  color:#1a1612;background:linear-gradient(135deg,#d4a843,#f0c96a);
+  padding:14px 32px;border-radius:4px;border:none;cursor:pointer;
+  box-shadow:0 4px 24px rgba(212,168,67,.35),0 1px 0 rgba(255,255,255,.3) inset;
+  transition:transform .2s,box-shadow .2s;opacity:0;animation:pdfBtnIn .8s ease 1.8s forwards}
+.pdf-btn:hover{transform:translateY(-2px) scale(1.03);
+  box-shadow:0 8px 32px rgba(212,168,67,.5),0 1px 0 rgba(255,255,255,.3) inset}
+.pdf-btn:active{transform:translateY(0) scale(.98)}
+.pdf-btn .pdf-icon{font-size:1.2em}
+@keyframes pdfBtnIn{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
+
+/* Disqualified — dark red */
+#screenDQ{background:#0e0806}
+#screenDQ .end-title{font-family:'Playfair Display',serif;font-size:clamp(1.8rem,6vw,2.8rem);
+  color:#d4635a;font-weight:700;letter-spacing:.05em;text-align:center}
+#screenDQ .end-sub{font-family:'IBM Plex Mono',monospace;font-size:clamp(.65rem,2.5vw,.8rem);
+  color:rgba(212,99,90,.5);letter-spacing:.2em;text-transform:uppercase;text-align:center}
+#screenDQ .end-icon{font-size:3.5rem}
+
+
+@supports(padding-bottom:env(safe-area-inset-bottom)){
+  body{padding-bottom:calc(40px + env(safe-area-inset-bottom))}
+}
+</style>
+</head>
+<body>
+
+<header class="hdr">
+  <div class="logo">Mind Benders</div>
+  <div class="global-timer">
+    <span class="gtimer-label">Time</span>
+    <span class="gtimer-val" id="gTimerVal">5:00</span>
+  </div>
+  <div class="round-info">✓ <span id="solvedDisplay">0</span> / 3</div>
+</header>
+
+<!-- correct-answers progress bar -->
+<div class="prog"><div class="prog-fill" id="progFill" style="width:0%"></div></div>
+<!-- countdown drain bar -->
+<div class="prog-timer"><div class="prog-timer-fill" id="progTimer" style="width:100%"></div></div>
+
+<div class="stage">
+<div class="card">
+  <div class="card-accent"></div>
+  <div class="card-body" id="cardBody">
+    <div class="stars">
+      <span class="star" id="s0">⭐</span>
+      <span class="star" id="s1">⭐</span>
+      <span class="star" id="s2">⭐</span>
+    </div>
+    <div class="tag-row">
+      <div class="cat-tag" id="catTag">—</div>
+      <div class="puzzle-num" id="puzzleNum">PUZZLE 1</div>
+    </div>
+    <div class="plabel" id="pLabel"></div>
+    <div class="question" id="pQuestion"></div>
+    <div id="pArea"></div>
+    <div class="feedback" id="feedback">
+      <div class="fstatus" id="fStatus"></div>
+      <div class="ftext" id="fText"></div>
+      <div class="wrong-notice" id="wrongNotice">✗ Wrong — keep going, a new puzzle is loading!</div>
+      <div class="next-row">
+        <button class="btn-next" id="btnNext" onclick="goNext()">Next Puzzle →</button>
+      </div>
+    </div>
+  </div>
+  <div class="hintbox" id="hintBox"></div>
+  <div class="card-foot">
+    <div class="diff-row">
+      <div class="dot on"></div><div class="dot"></div><div class="dot"></div>
+      <span class="dlabel">Easy</span>
+    </div>
+    <button class="hbtn" id="hBtn" onclick="showHint()">💡 Hint</button>
+  </div>
+</div>
+</div>
+
+<!-- Win screen -->
+<div class="endscreen" id="screenWin">
+  <div class="end-stars">⭐⭐⭐</div>
+  <div class="end-title">You Did It!</div>
+  <div class="end-sub">All 3 correct within 5 minutes</div>
+  <a class="pdf-btn" id="pdfBtn" href="treasure hunt.pdf" target="_blank" rel="noopener" style="display:none">
+    <span class="pdf-icon">📄</span> View Next Clue
+  </a>
+</div>
+
+<!-- Disqualified screen -->
+<div class="endscreen" id="screenDQ">
+  <div class="end-icon">⏱</div>
+  <div class="end-title">Disqualified</div>
+  <div class="end-sub">Time ran out before you solved all 3</div>
+
+</div>
+
+<script>
+// ═══════════════════════════════════════════════════
+// DATA
+// ═══════════════════════════════════════════════════
+const RIDDLES = [
+  {hint:'You check it to know the time.',q:'What has hands but cannot clap?',choices:['A glove','A clock','A statue','A robot'],ans:1,exp:'A <strong>clock</strong> — it has hour and minute hands, but can\'t clap!'},
+  {hint:'Think about what you leave behind when you walk.',q:'The more you take, the more you leave behind. What am I?',choices:['Money','Memories','Footsteps','Time'],ans:2,exp:'<strong>Footsteps</strong> — every step leaves one more footprint behind.'},
+  {hint:'I burn and give off light.',q:'I get shorter as I get older. What am I?',choices:['A river','A tree','A candle','A person'],ans:2,exp:'A <strong>candle</strong> — it burns down and gets shorter the longer it burns.'},
+  {hint:'You put me on an envelope before mailing.',q:'What can travel around the world while staying in a corner?',choices:['A bug','A stamp','The wind','A coin'],ans:1,exp:'A <strong>stamp</strong> — sits in the corner of an envelope and travels everywhere.'},
+  {hint:'You flip me when you can\'t decide.',q:'I have a head and a tail but no body. What am I?',choices:['A snake','A comet','A coin','A tadpole'],ans:2,exp:'A <strong>coin</strong> — it has heads and tails, but no body!'},
+  {hint:'Everyone gains this each year.',q:'What goes up but never comes down?',choices:['A balloon','The sun','Your age','A kite'],ans:2,exp:'Your <strong>age</strong> — once you get older, you can\'t get younger!'},
+  {hint:'You use it in the shower to clean up.',q:'What is full of holes but still holds water?',choices:['A net','A sponge','A bucket','A pipe'],ans:1,exp:'A <strong>sponge</strong> — full of tiny holes but absorbs lots of water.'},
+  {hint:'It flows through hills and valleys.',q:'What runs but never walks, has a mouth but never talks?',choices:['Time','A road','A river','A clock'],ans:2,exp:'A <strong>river</strong> — runs/flows, has a mouth where it meets the sea.'},
+  {hint:'Grandma uses it to sew.',q:'What has one eye but cannot see?',choices:['A camera','A needle','A potato','A storm'],ans:1,exp:'A <strong>needle</strong> — has a small hole (the eye) but cannot see.'},
+  {hint:'You go to the doctor when you have one.',q:'What can you catch but not throw?',choices:['A ball','A cold','A wave','A fish'],ans:1,exp:'A <strong>cold</strong> — you can catch a cold, but you can\'t throw one!'},
+  {hint:'You type on it every day.',q:'What has keys but no locks, space but no room, and you can Enter but can\'t go inside?',choices:['A piano','A keyboard','A map','A diary'],ans:1,exp:'A <strong>keyboard</strong> — it has keys, a space bar, and an Enter key.'},
+  {hint:'No matter how strong you are, you can\'t hold this for long.',q:'Light as a feather, yet the strongest person can\'t hold it for 5 minutes. What is it?',choices:['A secret','Breath','A thought','Smoke'],ans:1,exp:'<strong>Breath</strong> — even the strongest person can\'t hold their breath that long.'},
+  {hint:'You use one after a shower.',q:'What gets wetter as it dries?',choices:['The floor','A wet suit','A towel','A sponge'],ans:2,exp:'A <strong>towel</strong> — the more it dries things, the wetter it becomes!'},
+  {hint:'Think carefully about what kind of bird a rooster is.',q:'A rooster sits on a roof peak and lays an egg. Which way does it roll?',choices:['Left','Right','Down the slope','Roosters can\'t lay eggs'],ans:3,exp:'<strong>Roosters don\'t lay eggs</strong> — they\'re male chickens!'},
+  {hint:'Read it very literally — how many days minimum does each month have?',q:'Some months have 31 days, some 30 days. How many months have 28 days?',choices:['One','Two','None','All 12'],ans:3,exp:'<strong>All 12</strong> — every month has at least 28 days. February just has no more.'},
+];
+
+const WORD_THEMES = [
+  {name:'Animals',emoji:'🐾',words:['JAGUAR','PYTHON','FALCON','WALRUS','BADGER','MARMOT','GIBBON','CONDOR']},
+  {name:'Science',emoji:'🔬',words:['NEUTRON','PLASMA','ENZYME','FOSSIL','MAGNET','PROTON','CARBON','REFLEX']},
+  {name:'Geography',emoji:'🌍',words:['AMAZON','SAHARA','ARCTIC','CANYON','DELTA','TUNDRA','LAGOON','STEPPE']},
+  {name:'Space',emoji:'🌙',words:['NEBULA','PULSAR','QUASAR','CORONA','PHOTON','ZENITH','COMET','ECLIPSE']},
+  {name:'Human Body',emoji:'🫀',words:['NEURON','PLASMA','CORNEA','TENDON','PELVIS','THYMUS','MARROW','RETINA']},
+  {name:'Weather',emoji:'⛈️',words:['CYCLONE','NIMBUS','SQUALL','DRIZZLE','THUNDER','MONSOON','CUMULUS','VORTEX']},
+  {name:'Music',emoji:'🎵',words:['TREBLE','SONATA','TIMBRE','OCTAVE','BRIDGE','CHORUS','FERMATA','STACCATO']},
+  {name:'Mythology',emoji:'⚡',words:['ORACLE','SPHINX','HYDRA','MEDUSA','KRONOS','PEGASUS','TROJAN','HERMES']},
+];
+
+// ═══════════════════════════════════════════════════
+// STATE
+// ═══════════════════════════════════════════════════
+const TOTAL_TIME = 300; // 5 minutes shared across all puzzles
+
+const shuffle = a=>{const b=[...a];for(let i=b.length-1;i>0;i--){const j=0|Math.random()*(i+1);[b[i],b[j]]=[b[j],b[i]];}return b;};
+const clamp   = (v,lo,hi)=>Math.max(lo,Math.min(hi,v));
+
+let typeQueue=[], solved=0, puzzleCount=0;
+let globalTime=TOTAL_TIME, globalInt=null, gameOver=false, puzzleDone=false;
+let currentHint='', riddlePool=[];
+let mazeMoves=0, mazeKeyFn=null;
+let wsMM=null, wsMU=null;
+
+// ═══════════════════════════════════════════════════
+// GAME FLOW
+// ═══════════════════════════════════════════════════
+function nextType(){
+  if(!typeQueue.length) typeQueue=shuffle(['riddle','maze','wordsearch']);
+  return typeQueue.pop();
+}
+
+function restartGame(){
+  // hide end screens
+  document.getElementById('screenWin').classList.remove('show');
+  document.getElementById('screenDQ').classList.remove('show');
+  document.getElementById('pdfBtn').style.display='none';
+  typeQueue=[]; solved=0; puzzleCount=0; gameOver=false;
+  globalTime=TOTAL_TIME;
+  ['s0','s1','s2'].forEach(id=>document.getElementById(id).classList.remove('lit'));
+  document.getElementById('progFill').style.width='0%';
+  document.getElementById('solvedDisplay').textContent='0';
+  startGlobalTimer();
+  renderPuzzle();
+}
+
+function startGlobalTimer(){
+  clearInterval(globalInt);
+  updateGlobalTimer();
+  globalInt=setInterval(()=>{
+    if(gameOver){clearInterval(globalInt);return;}
+    globalTime--;
+    updateGlobalTimer();
+    if(globalTime<=0){
+      clearInterval(globalInt);
+      gameOver=true;
+      puzzleDone=true;
+      // Disable all inputs
+      document.querySelectorAll('.choice,#checkBtn,#textInput').forEach(el=>el.disabled=true);
+      setTimeout(()=>document.getElementById('screenDQ').classList.add('show'),800);
+    }
+  },1000);
+}
+
+function updateGlobalTimer(){
+  const m=0|globalTime/60, s=globalTime%60;
+  const el=document.getElementById('gTimerVal');
+  el.textContent=`${m}:${s.toString().padStart(2,'0')}`;
+  el.className='gtimer-val'+(globalTime<=60?' warn':'');
+  // drain bar
+  document.getElementById('progTimer').style.width=(globalTime/TOTAL_TIME*100)+'%';
+}
+
+function renderPuzzle(){
+  if(gameOver) return;
+  puzzleDone=false;
+  puzzleCount++;
+  const type=nextType();
+
+  document.getElementById('feedback').classList.remove('show');
+  document.getElementById('wrongNotice').classList.remove('show');
+  document.getElementById('btnNext').style.display='none';
+  document.getElementById('hintBox').className='hintbox';
+  document.getElementById('hintBox').textContent='';
+  document.getElementById('hBtn').className='hbtn';
+  document.getElementById('hBtn').textContent='💡 Hint';
+  document.getElementById('puzzleNum').textContent=`PUZZLE ${puzzleCount}`;
+
+  const tag=document.getElementById('catTag');
+  const labels={riddle:'Riddle',maze:'Maze',wordsearch:'Word Search'};
+  const cls={riddle:'ct-riddle',maze:'ct-maze',wordsearch:'ct-word'};
+  tag.textContent=labels[type]; tag.className='cat-tag '+cls[type];
+
+  cleanupMaze(); cleanupWS();
+
+  if(type==='riddle')     doRiddle();
+  else if(type==='maze')  doMaze();
+  else                    doWordSearch();
+
+  // Animate card
+  const cb=document.getElementById('cardBody');
+  cb.style.animation='none'; void cb.offsetHeight;
+  cb.style.animation='stageIn .45s cubic-bezier(.16,1,.3,1) both';
+}
+
+function onSolved(correct, statusTxt, expTxt){
+  if(puzzleDone||gameOver) return;
+  puzzleDone=true;
+
+  document.getElementById('fStatus').textContent=statusTxt;
+  document.getElementById('fStatus').className='fstatus '+(correct?'ok':'err');
+  document.getElementById('fText').innerHTML=expTxt||'';
+  document.getElementById('feedback').classList.add('show');
+
+  if(correct){
+    solved++;
+    const star=document.getElementById('s'+(solved-1));
+    if(star) setTimeout(()=>star.classList.add('lit'),150);
+    document.getElementById('solvedDisplay').textContent=solved;
+    document.getElementById('progFill').style.width=(solved/3*100)+'%';
+
+    if(solved>=3){
+      // All 3 correct in time → WIN
+      gameOver=true;
+      clearInterval(globalInt);
+      document.getElementById('btnNext').style.display='none';
+      // Show PDF button on win screen
+      const pdfBtn=document.getElementById('pdfBtn');
+      pdfBtn.style.display='';
+      setTimeout(()=>document.getElementById('screenWin').classList.add('show'),1400);
+    } else {
+      document.getElementById('btnNext').style.display='';
+    }
+  } else {
+    document.getElementById('wrongNotice').classList.add('show');
+    document.getElementById('btnNext').style.display='';
+  }
+}
+
+function goNext(){
+  cleanupMaze(); cleanupWS();
+  renderPuzzle();
+}
+
+function showHint(){
+  const btn=document.getElementById('hBtn');
+  if(btn.classList.contains('shown')) return;
+  btn.classList.add('shown'); btn.textContent='💡 Shown';
+  const box=document.getElementById('hintBox');
+  box.textContent=currentHint; box.classList.add('show');
+}
+
+// ═══════════════════════════════════════════════════
+// RIDDLE
+// ═══════════════════════════════════════════════════
+function doRiddle(){
+  if(!riddlePool.length) riddlePool=shuffle([...RIDDLES]);
+  const r=riddlePool.pop();
+  currentHint=r.hint;
+  document.getElementById('pLabel').textContent='RIDDLE';
+  document.getElementById('pQuestion').textContent=r.q;
+  const area=document.getElementById('pArea'); area.innerHTML='';
+  const div=document.createElement('div'); div.className='choices';
+  'ABCD'.split('').forEach((ltr,i)=>{
+    if(i>=r.choices.length) return;
+    const btn=document.createElement('button'); btn.className='choice';
+    btn.innerHTML=`<span class="cletter">${ltr}</span><span class="ctext">${r.choices[i]}</span>`;
+    btn.onclick=()=>{
+      if(puzzleDone||gameOver) return;
+      Array.from(div.children).forEach((b,j)=>{
+        b.disabled=true;
+        if(j===r.ans) b.classList.add('correct');
+        else if(b===btn&&i!==r.ans) b.classList.add('wrong');
+      });
+      onSolved(i===r.ans,i===r.ans?'✓ Correct!':'✗ Not quite',r.exp);
+    };
+    div.appendChild(btn);
+  });
+  area.appendChild(div);
+}
+
+// ═══════════════════════════════════════════════════
+// MAZE
+// ═══════════════════════════════════════════════════
+let mazeGrid,mazeRows,mazeCols,mazeCellSz,mazePlayer,mazeVisited;
+
+function generateMaze(R,C){
+  const g=Array.from({length:R},()=>Array.from({length:C},()=>({n:1,e:1,s:1,w:1,v:0})));
+  const carve=(r,c)=>{
+    g[r][c].v=1;
+    for(const [d,dr,dc,od] of shuffle([['n',-1,0,'s'],['s',1,0,'n'],['e',0,1,'w'],['w',0,-1,'e']])){
+      const nr=r+dr,nc=c+dc;
+      if(nr>=0&&nr<R&&nc>=0&&nc<C&&!g[nr][nc].v){g[r][c][d]=0;g[nr][nc][od]=0;carve(nr,nc);}
+    }
+  };
+  carve(0,0); return g;
+}
+
+function doMaze(){
+  currentHint='Use arrow keys / WASD on desktop. Swipe on the maze. Use the D-pad on mobile!';
+  document.getElementById('pLabel').textContent='MAZE';
+  document.getElementById('pQuestion').textContent='Navigate the ◆ from the top-left to the ★ at the bottom-right.';
+  const avail=Math.min(window.innerWidth-28,560)-32;
+  mazeRows=mazeCols=(window.innerWidth<440?9:11);
+  mazeCellSz=clamp(Math.floor(avail/mazeCols),24,52);
+  mazeGrid=generateMaze(mazeRows,mazeCols);
+  mazePlayer={r:0,c:0}; mazeVisited=new Set(['0,0']); mazeMoves=0;
+  const area=document.getElementById('pArea'); area.innerHTML='';
+  const wrap=document.createElement('div'); wrap.className='maze-wrap';
+  const canvas=document.createElement('canvas');
+  canvas.id='mzC'; canvas.width=mazeCols*mazeCellSz; canvas.height=mazeRows*mazeCellSz;
+  let tx=0,ty=0;
+  canvas.addEventListener('touchstart',e=>{tx=e.touches[0].clientX;ty=e.touches[0].clientY;},{passive:true});
+  canvas.addEventListener('touchend',e=>{
+    const dx=e.changedTouches[0].clientX-tx,dy=e.changedTouches[0].clientY-ty;
+    if(Math.abs(dx)<12&&Math.abs(dy)<12) return;
+    mazeMv(Math.abs(dx)>Math.abs(dy)?(dx>0?'e':'w'):(dy>0?'s':'n'));
+  },{passive:true});
+  const dpad=document.createElement('div'); dpad.className='dpad';
+  dpad.innerHTML=`<button class="db" data-d="n" style="grid-area:u">▲</button>
+    <button class="db" data-d="w" style="grid-area:l">◀</button>
+    <div style="grid-area:.;width:52px;height:52px"></div>
+    <button class="db" data-d="e" style="grid-area:r">▶</button>
+    <button class="db" data-d="s" style="grid-area:d">▼</button>`;
+  dpad.querySelectorAll('.db').forEach(b=>{
+    b.addEventListener('click',()=>mazeMv(b.dataset.d));
+    b.addEventListener('touchstart',e=>{e.preventDefault();mazeMv(b.dataset.d);},{passive:false});
+  });
+  const moves=document.createElement('div'); moves.className='maze-moves'; moves.id='mzMoves';
+  moves.textContent='Moves: 0';
+  const tip=document.createElement('div'); tip.className='maze-tip';
+  tip.textContent='Arrow keys / WASD • Swipe • D-pad';
+  wrap.append(canvas,moves,dpad,tip); area.appendChild(wrap);
+  mazeKeyFn=e=>{
+    const m={ArrowUp:'n',ArrowDown:'s',ArrowLeft:'w',ArrowRight:'e',w:'n',s:'s',a:'w',d:'e'};
+    if(m[e.key]){e.preventDefault();mazeMv(m[e.key]);}
+  };
+  document.addEventListener('keydown',mazeKeyFn);
+  drawMaze();
+}
+
+function mazeMv(dir){
+  if(puzzleDone||gameOver) return;
+  const {r,c}=mazePlayer,cell=mazeGrid[r][c];
+  if(cell[dir]) return;
+  if(dir==='n') mazePlayer.r--;
+  if(dir==='s') mazePlayer.r++;
+  if(dir==='e') mazePlayer.c++;
+  if(dir==='w') mazePlayer.c--;
+  mazeMoves++;
+  mazeVisited.add(`${mazePlayer.r},${mazePlayer.c}`);
+  const mel=document.getElementById('mzMoves');
+  if(mel) mel.textContent=`Moves: ${mazeMoves}`;
+  drawMaze();
+  if(mazePlayer.r===mazeRows-1&&mazePlayer.c===mazeCols-1)
+    setTimeout(()=>onSolved(true,'✓ Escaped!',`You escaped in <strong>${mazeMoves} moves</strong>! 🎉`),300);
+}
+
+function drawMaze(){
+  const cv=document.getElementById('mzC'); if(!cv) return;
+  const ctx=cv.getContext('2d'),cs=mazeCellSz,R=mazeRows,C=mazeCols,W=C*cs,H=R*cs;
+  ctx.fillStyle='#0e0c0a'; ctx.fillRect(0,0,W,H);
+  mazeVisited.forEach(k=>{
+    const [vr,vc]=k.split(',').map(Number);
+    ctx.fillStyle='rgba(212,168,67,.08)'; ctx.fillRect(vc*cs+1,vr*cs+1,cs-2,cs-2);
+  });
+  ctx.fillStyle='rgba(77,175,110,.18)'; ctx.fillRect((C-1)*cs+1,(R-1)*cs+1,cs-2,cs-2);
+  ctx.strokeStyle='rgba(212,168,67,.55)'; ctx.lineWidth=1.5; ctx.lineCap='square';
+  ctx.beginPath();
+  for(let r=0;r<R;r++) for(let c=0;c<C;c++){
+    const cell=mazeGrid[r][c],x=c*cs,y=r*cs;
+    if(cell.n){ctx.moveTo(x,y);ctx.lineTo(x+cs,y);}
+    if(cell.e){ctx.moveTo(x+cs,y);ctx.lineTo(x+cs,y+cs);}
+    if(cell.s){ctx.moveTo(x,y+cs);ctx.lineTo(x+cs,y+cs);}
+    if(cell.w){ctx.moveTo(x,y);ctx.lineTo(x,y+cs);}
+  }
+  ctx.stroke();
+  ctx.strokeStyle='rgba(212,168,67,.75)'; ctx.lineWidth=2; ctx.strokeRect(0,0,W,H);
+  ctx.textAlign='center'; ctx.textBaseline='middle';
+  ctx.fillStyle='rgba(212,168,67,.55)'; ctx.font=`${cs*.42}px serif`; ctx.fillText('◆',cs/2,cs/2);
+  ctx.fillStyle='#4daf6e'; ctx.font=`${cs*.48}px serif`; ctx.fillText('★',(C-1)*cs+cs/2,(R-1)*cs+cs/2);
+  const px=mazePlayer.c*cs+cs/2,py=mazePlayer.r*cs+cs/2;
+  const grd=ctx.createRadialGradient(px,py,0,px,py,cs*.45);
+  grd.addColorStop(0,'rgba(212,168,67,.35)'); grd.addColorStop(1,'rgba(212,168,67,0)');
+  ctx.fillStyle=grd; ctx.beginPath(); ctx.arc(px,py,cs*.45,0,Math.PI*2); ctx.fill();
+  ctx.fillStyle='#d4a843'; ctx.beginPath(); ctx.arc(px,py,cs*.27,0,Math.PI*2); ctx.fill();
+}
+
+function cleanupMaze(){
+  if(mazeKeyFn){document.removeEventListener('keydown',mazeKeyFn);mazeKeyFn=null;}
+}
+
+// ═══════════════════════════════════════════════════
+// WORD SEARCH
+// ═══════════════════════════════════════════════════
+let wsGrid2D=[],wsWords=[],wsFound=new Set(),wsCells=[];
+let wsDrag=false,wsDragStart=null,wsCurCells=[];
+
+function placeWord(grid,word,R,C){
+  for(const [dr,dc] of shuffle([[0,1],[1,0],[1,1]])){
+    const positions=shuffle(Array.from({length:R*C},(_,i)=>[0|i/C,i%C]));
+    for(const [r,c] of positions){
+      const er=r+dr*(word.length-1),ec=c+dc*(word.length-1);
+      if(er<0||er>=R||ec<0||ec>=C) continue;
+      let ok=true;
+      for(let i=0;i<word.length;i++){const ch=grid[r+dr*i][c+dc*i];if(ch&&ch!==word[i]){ok=false;break;}}
+      if(ok){
+        const cells=[];
+        for(let i=0;i<word.length;i++){grid[r+dr*i][c+dc*i]=word[i];cells.push({r:r+dr*i,c:c+dc*i});}
+        return cells;
+      }
+    }
+  }
+  return null;
+}
+
+function doWordSearch(){
+  const theme=WORD_THEMES[0|Math.random()*WORD_THEMES.length];
+  const pool=shuffle([...theme.words]);
+  const R=10,C=10;
+  wsGrid2D=Array.from({length:R},()=>Array(C).fill(''));
+  wsWords=[]; wsFound=new Set();
+  for(const w of pool){
+    if(wsWords.length>=4) break;
+    if(placeWord(wsGrid2D,w,R,C)) wsWords.push(w);
+  }
+  const alpha='ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+  for(let r=0;r<R;r++) for(let c=0;c<C;c++)
+    if(!wsGrid2D[r][c]) wsGrid2D[r][c]=alpha[0|Math.random()*26];
+
+  currentHint=`Find words related to ${theme.name}. Drag across letters to select!`;
+  document.getElementById('pLabel').textContent=`WORD SEARCH — ${theme.name.toUpperCase()} ${theme.emoji}`;
+  document.getElementById('pQuestion').textContent=`Find all ${wsWords.length} hidden words in the grid!`;
+
+  const avail=Math.min(window.innerWidth-28,560)-32;
+  const cs=clamp(Math.floor(avail/C),26,46);
+  const area=document.getElementById('pArea'); area.innerHTML='';
+  const wrap=document.createElement('div'); wrap.className='ws-wrap';
+  const gridEl=document.createElement('div'); gridEl.className='ws-grid'; gridEl.id='wsG';
+  gridEl.style.gridTemplateColumns=`repeat(${C},${cs}px)`;
+  gridEl.style.gridTemplateRows=`repeat(${R},${cs}px)`;
+  wsCells=[];
+  for(let r=0;r<R;r++){
+    wsCells[r]=[];
+    for(let c=0;c<C;c++){
+      const cell=document.createElement('div');
+      cell.className='wc'; cell.dataset.r=r; cell.dataset.c=c;
+      cell.textContent=wsGrid2D[r][c];
+      cell.style.fontSize=clamp(cs*.44,10,20)+'px';
+      wsCells[r][c]=cell; gridEl.appendChild(cell);
+    }
+  }
+  const wordList=document.createElement('div'); wordList.className='ws-words';
+  wsWords.forEach(w=>{
+    const chip=document.createElement('div');
+    chip.className='wsw'; chip.id='wsw-'+w; chip.textContent=w;
+    wordList.appendChild(chip);
+  });
+  wrap.append(gridEl,wordList); area.appendChild(wrap);
+  setupWSEvents(gridEl);
+}
+
+function setupWSEvents(gridEl){
+  gridEl.addEventListener('mousedown',e=>{
+    const el=e.target.closest('.wc'); if(!el||puzzleDone||gameOver) return;
+    wsDrag=true; wsDragStart={r:+el.dataset.r,c:+el.dataset.c};
+    wsUpdateSel(wsDragStart,wsDragStart);
+  });
+  document.addEventListener('mousemove',wsMM=e=>{
+    if(!wsDrag) return;
+    const el=document.elementFromPoint(e.clientX,e.clientY);
+    if(el&&el.classList.contains('wc')) wsUpdateSel(wsDragStart,{r:+el.dataset.r,c:+el.dataset.c});
+  });
+  document.addEventListener('mouseup',wsMU=()=>{if(wsDrag){wsDrag=false;wsCheck();}});
+  gridEl.addEventListener('touchstart',e=>{
+    e.preventDefault();
+    const t=e.touches[0],el=document.elementFromPoint(t.clientX,t.clientY);
+    if(!el||!el.classList.contains('wc')||puzzleDone||gameOver) return;
+    wsDrag=true; wsDragStart={r:+el.dataset.r,c:+el.dataset.c};
+    wsUpdateSel(wsDragStart,wsDragStart);
+  },{passive:false});
+  gridEl.addEventListener('touchmove',e=>{
+    e.preventDefault(); if(!wsDrag) return;
+    const t=e.touches[0],el=document.elementFromPoint(t.clientX,t.clientY);
+    if(el&&el.classList.contains('wc')) wsUpdateSel(wsDragStart,{r:+el.dataset.r,c:+el.dataset.c});
+  },{passive:false});
+  gridEl.addEventListener('touchend',e=>{e.preventDefault();if(wsDrag){wsDrag=false;wsCheck();}},{passive:false});
+}
+
+function wsLine(s,e){
+  const dr=e.r-s.r,dc=e.c-s.c,steps=Math.max(Math.abs(dr),Math.abs(dc));
+  if(steps===0) return [s];
+  if(dr!==0&&dc!==0&&Math.abs(dr)!==Math.abs(dc)) return [s];
+  const sr=Math.sign(dr),sc=Math.sign(dc);
+  return Array.from({length:steps+1},(_,i)=>({r:s.r+i*sr,c:s.c+i*sc}));
+}
+
+function wsUpdateSel(s,e){
+  wsCurCells.forEach(({r,c})=>{const el=wsCells[r]?.[c];if(el&&!el.classList.contains('fnd'))el.classList.remove('sel');});
+  wsCurCells=wsLine(s,e);
+  wsCurCells.forEach(({r,c})=>{const el=wsCells[r]?.[c];if(el&&!el.classList.contains('fnd'))el.classList.add('sel');});
+}
+
+function wsCheck(){
+  wsCurCells.forEach(({r,c})=>{const el=wsCells[r]?.[c];if(el)el.classList.remove('sel');});
+  if(wsCurCells.length<2){wsCurCells=[];return;}
+  const fwd=wsCurCells.map(({r,c})=>wsGrid2D[r][c]).join('');
+  const bwd=fwd.split('').reverse().join('');
+  const matched=wsWords.find(w=>(w===fwd||w===bwd)&&!wsFound.has(w));
+  if(matched){
+    wsFound.add(matched);
+    const cells=(matched===bwd&&matched!==fwd)?[...wsCurCells].reverse():wsCurCells;
+    cells.forEach(({r,c})=>{const el=wsCells[r]?.[c];if(el)el.classList.add('fnd');});
+    const chip=document.getElementById('wsw-'+matched);
+    if(chip) chip.classList.add('fnd');
+    if(wsFound.size===wsWords.length)
+      setTimeout(()=>onSolved(true,'✓ All Found!',`You found all <strong>${wsWords.length}</strong> words! 🎉`),300);
+  }
+  wsCurCells=[];
+}
+
+function cleanupWS(){
+  if(wsMM){document.removeEventListener('mousemove',wsMM);wsMM=null;}
+  if(wsMU){document.removeEventListener('mouseup',wsMU);wsMU=null;}
+}
+
+// ═══════════════════════════════════════════════════
+// START
+// ═══════════════════════════════════════════════════
+startGlobalTimer();
+renderPuzzle();
+</script>
+</body>
+</html>
