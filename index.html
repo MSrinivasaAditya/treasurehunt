@@ -198,7 +198,8 @@ body::after{content:'';position:fixed;inset:0;pointer-events:none;z-index:0;
   color:#1a1612;background:linear-gradient(135deg,#d4a843,#f0c96a);
   padding:14px 32px;border-radius:4px;border:none;cursor:pointer;
   box-shadow:0 4px 24px rgba(212,168,67,.35),0 1px 0 rgba(255,255,255,.3) inset;
-  transition:transform .2s,box-shadow .2s;opacity:0;animation:pdfBtnIn .8s ease 1.8s forwards}
+  transition:transform .2s,box-shadow .2s;opacity:0;transform:translateY(12px)}
+.pdf-btn.animate-in{animation:pdfBtnIn .8s ease forwards}
 .pdf-btn:hover{transform:translateY(-2px) scale(1.03);
   box-shadow:0 8px 32px rgba(212,168,67,.5),0 1px 0 rgba(255,255,255,.3) inset}
 .pdf-btn:active{transform:translateY(0) scale(.98)}
@@ -276,7 +277,7 @@ body::after{content:'';position:fixed;inset:0;pointer-events:none;z-index:0;
   <div class="end-stars">⭐⭐⭐</div>
   <div class="end-title">You Did It!</div>
   <div class="end-sub">All 3 correct within 5 minutes</div>
-  <a class="pdf-btn" id="pdfBtn" href="treasure hunt.pdf" target="_blank" rel="noopener" style="display:none">
+  <a class="pdf-btn" id="pdfBtn" href="treasure%20hunt.pdf" target="_blank" rel="noopener" style="display:none">
     <span class="pdf-icon">📄</span> View Next Clue
   </a>
 </div>
@@ -348,7 +349,9 @@ function restartGame(){
   // hide end screens
   document.getElementById('screenWin').classList.remove('show');
   document.getElementById('screenDQ').classList.remove('show');
-  document.getElementById('pdfBtn').style.display='none';
+  const pdfBtnR=document.getElementById('pdfBtn');
+  pdfBtnR.style.display='none';
+  pdfBtnR.classList.remove('animate-in');
   typeQueue=[]; solved=0; puzzleCount=0; gameOver=false;
   globalTime=TOTAL_TIME;
   ['s0','s1','s2'].forEach(id=>document.getElementById(id).classList.remove('lit'));
@@ -441,7 +444,12 @@ function onSolved(correct, statusTxt, expTxt){
       // Show PDF button on win screen
       const pdfBtn=document.getElementById('pdfBtn');
       pdfBtn.style.display='';
-      setTimeout(()=>document.getElementById('screenWin').classList.add('show'),1400);
+      pdfBtn.classList.remove('animate-in');
+      setTimeout(()=>{
+        document.getElementById('screenWin').classList.add('show');
+        // Trigger animation after win screen is visible
+        setTimeout(()=>pdfBtn.classList.add('animate-in'),1800);
+      },1400);
     } else {
       document.getElementById('btnNext').style.display='';
     }
